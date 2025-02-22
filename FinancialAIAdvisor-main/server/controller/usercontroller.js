@@ -223,7 +223,7 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-// Check authentication status
+// Check authentication Status
 export const checkAuth = async (req, res) => {
   try {
     const token = req.cookies.token;
