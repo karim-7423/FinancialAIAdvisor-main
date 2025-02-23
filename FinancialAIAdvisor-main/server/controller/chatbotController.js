@@ -1,7 +1,7 @@
-import axios from "axios";
 import ChatModel from "../models/ChatModel.js";
 import dotenv from "dotenv";
 import Sentiment from "sentiment";
+import axios from "axios";
 
 dotenv.config();
 const sentiment = new Sentiment();
@@ -15,26 +15,21 @@ const financialTips = [
 ];
 
 const faqs = {
-  "how to save money":
-    "💰 Save at least 20% of your income each month and avoid impulse purchases.",
-  "best way to invest":
-    "📊 Diversify your investments and consider low-cost index funds.",
-  "how to improve credit score":
-    "✅ Pay bills on time and keep credit utilization below 30%.",
-  "how to start budgeting":
-    "📋 Track your expenses and allocate your income into savings, needs, and wants.",
+  "c": "💰 Save at least 20% of your income each month and avoid impulse purchases.",
+  "best way to invest": "📊 Diversify your investments and consider low-cost index funds.",
+  "how to improve credit score": "✅ Pay bills on time and keep credit utilization below 30%.",
+  "how to start budgeting": "📋 Track your expenses and allocate your income into savings, needs, and wants.",
 };
 
-// **API Fetching Functions**
-const fetchCurrencyRates = async (base = "USD", target = "EUR") => {
+// **Fetch API Data Functions**
+const fetchCurrencyRates = async () => {
   try {
     const response = await axios.get(
-      `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=${base}&to_currency=${target}&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`
+      `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=EUR&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`
     );
-    return response.data;
+    return response.data["Realtime Currency Exchange Rate"] || "No data available";
   } catch (error) {
-    console.error("Error fetching currency rates:", error);
-    return "Unable to fetch currency exchange rates.";
+    return "❌ Unable to fetch currency exchange rates.";
   }
 };
 
@@ -43,10 +38,9 @@ const fetchStockGainers = async () => {
     const response = await axios.get(
       `https://finnhub.io/api/v1/stock/market-gainers?token=${process.env.FINNHUB_API_KEY}`
     );
-    return response.data;
+    return response.data || "No stock gainers data available.";
   } catch (error) {
-    console.error("Error fetching stock gainers:", error);
-    return "Unable to fetch stock gainers.";
+    return "❌ Unable to fetch stock gainers.";
   }
 };
 
@@ -55,10 +49,9 @@ const fetchEconomicEvents = async () => {
     const response = await axios.get(
       `https://finnhub.io/api/v1/calendar/economic?token=${process.env.FINNHUB_API_KEY}`
     );
-    return response.data;
+    return response.data.economicCalendar || "No economic events available.";
   } catch (error) {
-    console.error("Error fetching economic events:", error);
-    return "Unable to fetch economic events.";
+    return "❌ Unable to fetch economic events.";
   }
 };
 
@@ -67,73 +60,68 @@ const fetchMetalPrices = async () => {
     const response = await axios.get(
       `https://www.alphavantage.co/query?function=GLOBAL_METAL_PRICE&apikey=${process.env.ALPHA_VANTAGE_API_KEY}`
     );
-    return response.data;
+    return response.data["Global Metal Price"] || "No data available.";
   } catch (error) {
-    console.error("Error fetching metal prices:", error);
-    return "Unable to fetch metal prices.";
+    return "❌ Unable to fetch metal prices.";
   }
 };
 
-// **Chatbot Handler**
+// ✅ **Handle Incoming Chat Requests**
 export const handleChatRequest = async (req, res) => {
   const { message } = req.body;
+  const userId = req.user.id; // ✅ Ensure chat is linked to a user
   const lowerMessage = message.toLowerCase();
 
-  // **Check FAQs**
+  // ✅ Check if message is an FAQ
   if (faqs[lowerMessage]) {
     return res.json({ response: faqs[lowerMessage] });
   }
 
   try {
-    // **Sentiment Analysis**
+    // ✅ Sentiment Analysis
     const sentimentResult = sentiment.analyze(message);
     let sentimentLabel = "😐 Neutral";
     if (sentimentResult.score > 0) sentimentLabel = "😊 Positive";
     else if (sentimentResult.score < 0) sentimentLabel = "😞 Negative";
 
-    let responseText = `🔍 Sentiment Analysis: ${sentimentLabel}\nAnalyzing financial data for: ${message}`;
+    let responseText = `🔍 Sentiment Analysis: ${sentimentLabel}`;
 
-    // **Determine API to Call**
+    // ✅ Determine Relevant API
+    let financialData = "❌ No relevant financial data found.";
     if (message.includes("exchange rate") || message.includes("currency")) {
-      const currencyData = await fetchCurrencyRates();
-      responseText += `\n💱 Currency Exchange Rate: ${JSON.stringify(
-        currencyData
-      )}`;
-    } else if (
-      message.includes("stock") ||
-      message.includes("market gainers")
-    ) {
-      const stockData = await fetchStockGainers();
-      responseText += `\n📈 Stock Market Gainers: ${JSON.stringify(stockData)}`;
-    } else if (
-      message.includes("economic event") ||
-      message.includes("inflation")
-    ) {
-      const economicData = await fetchEconomicEvents();
-      responseText += `\n📅 Economic Events: ${JSON.stringify(economicData)}`;
-    } else if (
-      message.includes("gold") ||
-      message.includes("silver") ||
-      message.includes("metal prices")
-    ) {
-      const metalData = await fetchMetalPrices();
-      responseText += `\n🥇 Metal Prices: ${JSON.stringify(metalData)}`;
-    } else {
-      responseText += `\n❌ No relevant financial data found for: ${message}`;
+      financialData = await fetchCurrencyRates();
+    } else if (message.includes("stock") || message.includes("market gainers")) {
+      financialData = await fetchStockGainers();
+    } else if (message.includes("economic event") || message.includes("inflation")) {
+      financialData = await fetchEconomicEvents();
+    } else if (message.includes("gold") || message.includes("silver") || message.includes("metal prices")) {
+      financialData = await fetchMetalPrices();
     }
 
-    // **Add a Financial Tip**
-    const randomTip =
-      financialTips[Math.floor(Math.random() * financialTips.length)];
+    responseText += `\n📊 Financial Data: ${JSON.stringify(financialData, null, 2)}`;
+
+    // ✅ Add a Financial Tip
+    const randomTip = financialTips[Math.floor(Math.random() * financialTips.length)];
     responseText += `\n💡 Financial Tip: ${randomTip}`;
 
-    // **Save to Database**
-    const chatEntry = new ChatModel({ message, response: responseText });
+    // ✅ Save Message to Database (With User ID)
+    const chatEntry = new ChatModel({ userId, messages: [{ question: message, answer: responseText }] });
     await chatEntry.save();
 
     res.json({ response: responseText });
   } catch (error) {
-    console.error("Error processing request:", error);
     res.status(500).json({ response: "Error fetching financial data." });
+  }
+};
+
+// ✅ **Fetch User's Chat History**
+export const getChatHistory = async (req, res) => {
+  try {
+    const userId = req.user.id; // ✅ Fetch chat history for logged-in user
+    const chatHistory = await ChatModel.find({ userId }).sort({ "messages.timestamp": -1 });
+
+    res.json(chatHistory);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching chat history." });
   }
 };

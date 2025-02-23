@@ -16,7 +16,11 @@ const Login = () => {
     isLoading,
     handleLogin,
   } = useLogin();
-
+  // ✅ Calls login function
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await handleLogin(); // ✅ Calls login function
+  };
   return (
     <div className="main-container">
       <div className="login-container">

@@ -11,7 +11,7 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = "6dsb&c~HYAx3K787,5.K2lK*EA*h|9C-6Y,$.jiKS1s9lTE5^bPN$>+~";
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({

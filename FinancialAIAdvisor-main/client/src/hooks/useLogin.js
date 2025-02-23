@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // ✅ Add this impor
 import { useAuthContext } from "../context/AuthContext";
 
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -13,7 +14,7 @@ export const useLogin = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { dispatch } = useAuthContext();
-
+  const navigate = useNavigate();   // ✅ 
   const handleLogin = useCallback(
     async (e) => {
       e.preventDefault();
@@ -45,6 +46,9 @@ export const useLogin = () => {
 
           // Set success message
           setSuccessMessage("Login successful");
+          // ✅ Redirect to Home Page after successful login
+  // ✅ Redirect to Chatbot instead of Home
+      navigate("/chatbot");
         } else {
           console.error("Unexpected response format:", response.data);
           throw new Error("Invalid response data");

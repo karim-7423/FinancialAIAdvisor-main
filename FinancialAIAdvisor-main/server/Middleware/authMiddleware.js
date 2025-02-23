@@ -1,12 +1,14 @@
 import jwt from "jsonwebtoken";
 import User from "../models/UserModel.js";
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = "6dsb&c~HYAx3K787,5.K2lK*EA*h|9C-6Y,$.jiKS1s9lTE5^bPN$>+~";
 
 export const auth = async (req, res, next) => {
   let token;
-
+  console.log("Authorization Header:", req.headers.authorization);
   // Retrieve token from the Authorization header
+  console.log("✅ JWT_SECRET:", JWT_SECRET);
+
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
